@@ -24,7 +24,6 @@ class StoreTableRequest extends FormRequest
     {
         return [
             'table_number' => 'required|string|max:20|unique:tables,table_number',
-            'qr_code_url' => 'nullable|string|max:255',
         ];
     }
 }

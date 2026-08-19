@@ -28,13 +28,19 @@ class TableController extends Controller
      */
     public function store(StoreTableRequest $request)
     {
-        // Validasi sudah otomatis ditangani oleh StoreTableRequest
+        // 1. Generate token unik
+        $token = Str::random(64);
 
+        // 2. Ambil domain dari .env (Otomatis & Dinamis)
+        $domainDepan = env('FRONTEND_URL', 'https://montera.cafe');
+        $linkScan = $domainDepan . '/scan/' . $token;
+
+        // 3. Simpan ke database
         $table = Table::create([
             'table_number' => $request->table_number,
-            'qr_token' => Str::random(64), // Generate 64 karakter acak
-            'qr_code_url' => $request->qr_code_url, // Opsional jika admin mau custom link
-            'is_active' => true // Default selalu aktif saat baru dibuat
+            'qr_token' => $token,
+            'qr_code_url' => $linkScan, // Otomatis terisi URL lengkap
+            'is_active' => true
         ]);
 
         return $this->successResponse($table, 'Meja berhasil ditambahkan', 201);
