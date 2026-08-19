@@ -12,7 +12,7 @@ class StoreTableRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,8 @@ class StoreTableRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'table_number' => 'required|string|max:20|unique:tables,table_number',
+            'qr_code_url' => 'nullable|string|max:255',
         ];
     }
 }

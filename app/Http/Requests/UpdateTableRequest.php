@@ -12,7 +12,7 @@ class UpdateTableRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,10 @@ class UpdateTableRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            // unique:namatabel,namakolom,id_yang_dikecualikan
+            'table_number' => 'sometimes|required|string|max:20|unique:tables,table_number,' . $this->table->id,
+            'qr_code_url' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
         ];
     }
 }
