@@ -3,9 +3,144 @@
 namespace App\Http\Controllers\Api\V1\Customer;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreOrderRequest;
+use App\Models\Addon;
+use App\Models\MenuItem;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\OrderItemAddon;
+use App\Models\TaxSetting;
+use App\Traits\ApiResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
-    //
+    use ApiResponse;
+
+    public function store(StoreOrderRequest $request)
+    {
+        $validated = $request->validated();
+
+        $order = DB::transaction(function () use ($validated) {
+            $subtotal = 0;
+
+            $order = Order::create([
+                'order_number' => $this->generateOrderNumber(),
+                'table_id' => $validated['table_id'] ?? null,
+                'order_type' => $validated['order_type'],
+                'customer_name' => $validated['customer_name'],
+                'payment_method' => $validated['payment_method'],
+                'payment_status' => 'unpaid',
+                'subtotal' => 0,
+                'tax_amount' => 0,
+                'service_charge_amount' => 0,
+                'total_amount' => 0,
+            ]);
+
+            foreach ($validated['items'] as $item) {
+                $menuItem = MenuItem::where('id', $item['menu_item_id'])
+                    ->where('is_active', true)
+                    ->first();
+
+                if (!$menuItem) {
+                    abort(422, 'Menu item is not available.');
+                }
+
+                $unitPrice = $menuItem->price;
+                $itemSubtotal = $unitPrice * $item['quantity'];
+
+                $orderItem = OrderItem::create([
+                    'order_id' => $order->id,
+                    'item_type' => 'menu',
+                    'menu_item_id' => $menuItem->id,
+                    'bundle_id' => null,
+                    'item_name' => $menuItem->name,
+                    'unit_price' => $unitPrice,
+                    'quantity' => $item['quantity'],
+                    'subtotal' => $itemSubtotal,
+                    'notes' => $item['notes'] ?? null,
+                ]);
+
+                $addonIds = $item['addon_ids'] ?? [];
+
+                if (!empty($addonIds)) {
+                    $addons = Addon::whereIn('id', $addonIds)
+                        ->where('is_active', true)
+                        ->get();
+
+                    if ($addons->count() !== count(array_unique($addonIds))) {
+                        abort(422, 'One or more addons are not available.');
+                    }
+
+                    $allowedAddonIds = $menuItem->addons()
+                        ->where('addons.is_active', true)
+                        ->pluck('addons.id');
+
+                    foreach ($addons as $addon) {
+                        if (!$allowedAddonIds->contains($addon->id)) {
+                            abort(
+                                422,
+                                "Addon {$addon->name} is not available for {$menuItem->name}."
+                            );
+                        }
+
+                        OrderItemAddon::create([
+                            'order_item_id' => $orderItem->id,
+                            'addon_id' => $addon->id,
+                            'addon_name' => $addon->name,
+                            'addon_price' => $addon->price,
+                        ]);
+
+                        $itemSubtotal += $addon->price * $item['quantity'];
+                    }
+                }
+
+                $orderItem->update([
+                    'subtotal' => $itemSubtotal,
+                ]);
+
+                $subtotal += $itemSubtotal;
+            }
+
+            $taxSetting = TaxSetting::latest()->first();
+
+            $taxPercentage = $taxSetting?->tax_percentage ?? 0;
+            $serviceChargePercentage = $taxSetting?->service_charge_percentage ?? 0;
+
+            $taxAmount = $subtotal * ($taxPercentage / 100);
+            $serviceChargeAmount = $subtotal * ($serviceChargePercentage / 100);
+            $totalAmount = $subtotal + $taxAmount + $serviceChargeAmount;
+
+            $order->update([
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'service_charge_amount' => $serviceChargeAmount,
+                'total_amount' => $totalAmount,
+            ]);
+
+            return $order;
+        });
+
+        $order->load([
+            'table',
+            'items.menuItem',
+            'items.addons.addon',
+        ]);
+
+        return $this->successResponse(
+            $order,
+            'Order created successfully.',
+            201
+        );
+    }
+
+    private function generateOrderNumber(): string
+    {
+        do {
+            $orderNumber = 'ORD-' . strtoupper(Str::random(12));
+        } while (Order::where('order_number', $orderNumber)->exists());
+
+        return $orderNumber;
+    }
 }
