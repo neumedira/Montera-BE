@@ -64,7 +64,6 @@ class TableController extends Controller
 
         $table->update([
             'table_number' => $request->table_number ?? $table->table_number,
-            'qr_code_url' => $request->qr_code_url ?? $table->qr_code_url,
             'is_active' => $request->has('is_active') ? $request->is_active : $table->is_active,
         ]);
 
