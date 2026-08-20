@@ -9,41 +9,32 @@ use App\Http\Requests\UpdateMenuCategoryRequest;
 
 class MenuCategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
     public function index()
     {
         //
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(StoreMenuCategoryRequest $request)
     {
         //
     }
 
-    /**
-     * Display the specified resource.
-     */
+
     public function show(MenuCategory $menuCategory)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(UpdateMenuCategoryRequest $request, MenuCategory $menuCategory)
     {
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    
     public function destroy(MenuCategory $menuCategory)
     {
         //
