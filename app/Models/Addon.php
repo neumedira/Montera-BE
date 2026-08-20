@@ -8,6 +8,8 @@ class Addon extends Model
 {
     protected $table = 'addons';
 
+    protected $guarded = ['id'];
+
     public function menuItems()
     {
         return $this->belongsToMany(
