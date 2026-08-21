@@ -12,7 +12,7 @@ class UpdateMenuCategoryRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,9 @@ class UpdateMenuCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name'       => 'required|string|max:100',
+            'sort_order' => 'nullable|integer',
+            'is_active'  => 'nullable|boolean',
         ];
     }
 }

@@ -12,7 +12,7 @@ class UpdateAddonRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,9 @@ class UpdateAddonRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name'      => 'required|string|max:100',
+            'price'     => 'required|numeric|min:0',
+            'is_active' => 'nullable|boolean',
         ];
     }
 }

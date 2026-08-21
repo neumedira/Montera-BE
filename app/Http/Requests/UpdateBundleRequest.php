@@ -12,7 +12,7 @@ class UpdateBundleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,14 @@ class UpdateBundleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name'                 => 'required|string|max:150',
+            'photo_url'            => 'nullable|string|max:255',
+            'normal_price'         => 'required|numeric|min:0',
+            'bundle_price'         => 'required|numeric|min:0',
+            'is_active'            => 'nullable|boolean',
+            'items'                => 'nullable|array',
+            'items.*.menu_item_id' => 'required_with:items|exists:menu_items,id',
+            'items.*.quantity'     => 'required_with:items|integer|min:1',
         ];
     }
 }

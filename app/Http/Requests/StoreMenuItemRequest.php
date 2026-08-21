@@ -12,7 +12,7 @@ class StoreMenuItemRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,12 @@ class StoreMenuItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'category_id' => 'nullable|exists:menu_categories,id',
+            'name'        => 'required|string|max:150',
+            'price'       => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'photo_url'   => 'nullable|string|max:255',
+            'is_active'   => 'nullable|boolean',
         ];
     }
 }
