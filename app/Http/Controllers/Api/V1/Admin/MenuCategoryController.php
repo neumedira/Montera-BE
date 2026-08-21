@@ -6,46 +6,42 @@ use App\Http\Controllers\Controller;
 use App\Models\MenuCategory;
 use App\Http\Requests\StoreMenuCategoryRequest;
 use App\Http\Requests\UpdateMenuCategoryRequest;
+use App\Traits\ApiResponse;
 
 class MenuCategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
     public function index()
     {
-        //
+        $categories = MenuCategory::all();
+        return $this->successResponse($categories, 'Menu categories retrieved.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(StoreMenuCategoryRequest $request)
     {
-        //
+        $category = MenuCategory::create($request->validated());
+        return $this->successResponse($category, 'Menu category created.', 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+
     public function show(MenuCategory $menuCategory)
     {
-        //
+        return $this->successResponse($menuCategory, 'Menu category retrieved.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(UpdateMenuCategoryRequest $request, MenuCategory $menuCategory)
     {
-        //
+        $menuCategory->update($request->validated());
+        return $this->successResponse($menuCategory, 'Menu category updated.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(MenuCategory $menuCategory)
     {
-        //
+        $menuCategory->delete();
+        return $this->successResponse(null, 'Menu category deleted.');
     }
 }

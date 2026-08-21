@@ -6,46 +6,48 @@ use App\Http\Controllers\Controller;
 use App\Models\Bundle;
 use App\Http\Requests\StoreBundleRequest;
 use App\Http\Requests\UpdateBundleRequest;
+use App\Traits\ApiResponse;
 
 class BundleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
     public function index()
     {
-        //
+        $bundles = Bundle::with('items')->get();
+
+        return $this->successResponse($bundles, 'Bundles retrieved.');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(StoreBundleRequest $request)
     {
-        //
+        $bundle = Bundle::create($request->validated());
+
+        return $this->successResponse($bundle, 'Bundle created.', 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+
     public function show(Bundle $bundle)
     {
-        //
+        $bundle->load('items');
+
+        return $this->successResponse($bundle, 'Bundle retrieved.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(UpdateBundleRequest $request, Bundle $bundle)
     {
-        //
+        $bundle->update($request->validated());
+
+        return $this->successResponse($bundle, 'Bundle updated.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(Bundle $bundle)
     {
-        //
+        $bundle->delete();
+
+        return $this->successResponse(null, 'Bundle deleted.');
     }
 }

@@ -6,46 +6,47 @@ use App\Http\Controllers\Controller;
 use App\Models\Addon;
 use App\Http\Requests\StoreAddonRequest;
 use App\Http\Requests\UpdateAddonRequest;
+use App\Traits\ApiResponse;
 
 class AddonController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use ApiResponse;
+
     public function index()
     {
-        //
+        $addons = Addon::all();
+
+        return $this->successResponse($addons, 'Addons retrieved.');
+
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(StoreAddonRequest $request)
     {
-        //
+        $addon = Addon::create($request->validated());
+
+        return $this->successResponse($addon, 'Addon created.', 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+
     public function show(Addon $addon)
     {
-        //
+        return $this->successResponse($addon, 'Addon retrieved.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(UpdateAddonRequest $request, Addon $addon)
     {
-        //
+        $addon->update($request->validated());
+
+        return $this->successResponse($addon, 'Addon updated.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(Addon $addon)
     {
-        //
+        $addon->delete();
+
+        return $this->successResponse(null, 'Addon deleted.');
     }
 }
