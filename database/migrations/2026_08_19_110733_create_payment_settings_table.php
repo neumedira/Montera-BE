@@ -12,9 +12,10 @@ return new class extends Migration {
     {
         Schema::create('payment_settings', function (Blueprint $table) {
             $table->id();
-            $table->enum('method', ['cash', 'qris'])->unique();
+            $table->string('method');
             $table->boolean('is_active')->default(true);
             $table->string('provider_note', 100)->nullable();
+            $table->string('qr_image_url')->nullable();
             $table->timestamps();
         });
     }
