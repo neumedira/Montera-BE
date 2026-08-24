@@ -25,6 +25,7 @@ class StoreMenuItemRequest extends FormRequest
         return [
             'category_id' => 'nullable|exists:menu_categories,id',
             'name'        => 'required|string|max:150',
+            'label'       => 'nullable|string|max:50',
             'price'       => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'photo_url'   => 'nullable|string|max:255',
