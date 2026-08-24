@@ -15,6 +15,8 @@ return new class extends Migration {
             $table->string('cafe_name', 150);
             $table->text('address')->nullable();
             $table->string('whatsapp_number', 20)->nullable();
+            $table->string('instagram', 50)->nullable();
+            $table->string('tiktok', 50)->nullable();
             $table->timestamps();
         });
     }
