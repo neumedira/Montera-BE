@@ -43,7 +43,8 @@ Route::prefix('v1/admin')->group(function () {
         Route::apiResource('addons', AddonController::class);
         Route::apiResource('bundles', BundleController::class);
 
-        // Order Monitoring (No Create/Delete)
+        // Order Monitoring & Update Status (Fitur Rafi - Dev 4)
+        Route::patch('orders/{id}/status', [OrderAdminController::class, 'updateStatus']);
         Route::apiResource('orders', OrderAdminController::class)->except(['store', 'destroy']);
     });
 });

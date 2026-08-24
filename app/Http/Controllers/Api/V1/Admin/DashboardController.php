@@ -12,36 +12,46 @@ class DashboardController extends Controller
 {
     use ApiResponse;
 
-    /**
-     * Menampilkan data statistik untuk Dashboard Admin
-     */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            // Tanggal hari ini
             $today = Carbon::today();
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
 
-            // 1. Total Order (Keseluruhan)
-            $totalOrderAllTime = Order::count();
+            $orderQuery = Order::query();
 
-            // 2. Total Order (Hari Ini)
-            $totalOrderToday = Order::whereDate('created_at', $today)->count();
+            // Filter rentang tanggal jika opsi start_date dan end_date dikirim
+            if ($startDate && $endDate) {
+                $orderQuery->whereBetween('created_at', [
+                    Carbon::parse($startDate)->startOfDay(),
+                    Carbon::parse($endDate)->endOfDay()
+                ]);
+            }
 
-            // 3. Pendapatan Hari Ini (Pesanan hari ini dengan payment_status 'paid')
-            $revenueToday = Order::whereDate('created_at', $today)
+            $totalOrders = (clone $orderQuery)->count();
+            $totalRevenue = (clone $orderQuery)->where('payment_status', 'paid')->sum('total_amount');
+
+            $todayOrders = Order::whereDate('created_at', $today)->count();
+            $todayRevenue = Order::whereDate('created_at', $today)
                                  ->where('payment_status', 'paid')
                                  ->sum('total_amount');
 
             $data = [
-                'total_order_all_time' => $totalOrderAllTime,
-                'total_order_today'    => $totalOrderToday,
-                'revenue_today'        => (float) $revenueToday,
+                'total_orders'  => $totalOrders,
+                'total_revenue' => (float) $totalRevenue,
+                'today_orders'  => $todayOrders,
+                'today_revenue' => (float) $todayRevenue,
+                'filter'        => [
+                    'start_date' => $startDate ?? null,
+                    'end_date'   => $endDate ?? null,
+                ]
             ];
 
             return $this->successResponse($data, 'Berhasil mengambil data statistik dashboard admin');
 
         } catch (\Exception $e) {
-            return $this->errorResponse('Terjadi kesalahan saat mengambil data dashboard: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data dashboard: ' . $e->getMessage(), null, 500);
         }
     }
 }

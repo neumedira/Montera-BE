@@ -6,24 +6,35 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class OrderAdminController extends Controller
 {
     use ApiResponse;
 
-    /**
-     * Display a listing of the resource (Daftar Pesanan Masuk).
-     */
     public function index(Request $request)
     {
         try {
-            // Mengambil daftar pesanan beserta relasi meja dan item
-            // Mendukung filter query string opsional: ?payment_status=paid atau ?order_type=dine-in
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
+            $status = $request->query('status');
+            $paymentStatus = $request->query('payment_status');
+            $orderType = $request->query('order_type');
+
             $orders = Order::with(['table', 'items'])
-                ->when($request->payment_status, function ($query, $status) {
-                    return $query->where('payment_status', $status);
+                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                    return $query->whereBetween('created_at', [
+                        Carbon::parse($startDate)->startOfDay(),
+                        Carbon::parse($endDate)->endOfDay()
+                    ]);
                 })
-                ->when($request->order_type, function ($query, $type) {
+                ->when($status, function ($query, $status) {
+                    return $query->where('status', $status);
+                })
+                ->when($paymentStatus, function ($query, $paymentStatus) {
+                    return $query->where('payment_status', $paymentStatus);
+                })
+                ->when($orderType, function ($query, $type) {
                     return $query->where('order_type', $type);
                 })
                 ->latest()
@@ -35,13 +46,9 @@ class OrderAdminController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource (Detail Struk Pesanan).
-     */
     public function show($id)
     {
         try {
-            // Mencari order berdasarkan ID beserta relasi meja dan item detailnya
             $order = Order::with(['table', 'items'])->find($id);
 
             if (!$order) {
@@ -53,4 +60,29 @@ class OrderAdminController extends Controller
             return $this->errorResponse('Gagal mengambil detail pesanan: ' . $e->getMessage(), null, 500);
         }
     }
+
+   public function updateStatus(Request $request, $id)
+{
+    try {
+        // Validasi disesuaikan ke payment_status
+        $request->validate([
+            'payment_status' => 'required|in:unpaid,paid',
+        ]);
+
+        $order = Order::find($id);
+
+        if (!$order) {
+            return $this->errorResponse('Data pesanan tidak ditemukan', null, 404);
+        }
+
+        $order->payment_status = $request->payment_status;
+        $order->save();
+
+        return $this->successResponse($order, 'Berhasil memperbarui status pembayaran pesanan menjadi ' . $request->payment_status);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return $this->errorResponse('Validasi gagal', $e->errors(), 422);
+    } catch (\Exception $e) {
+        return $this->errorResponse('Gagal memperbarui status pesanan: ' . $e->getMessage(), null, 500);
+    }
+}
 }
