@@ -53,4 +53,30 @@ class OrderAdminController extends Controller
             return $this->errorResponse('Gagal mengambil detail pesanan: ' . $e->getMessage(), null, 500);
         }
     }
+
+    /**
+     * Verifikasi Pembayaran Manual QRIS oleh Admin (Revisi Client).
+     */
+    public function verifyPayment(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'payment_status' => 'required|in:paid,failed',
+            ]);
+
+            $order = Order::find($id);
+
+            if (!$order) {
+                return $this->errorResponse('Data pesanan tidak ditemukan', null, 404);
+            }
+
+            $order->update([
+                'payment_status' => $request->payment_status,
+            ]);
+
+            return $this->successResponse($order, 'Status pembayaran berhasil diperbarui secara manual');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status pembayaran: ' . $e->getMessage(), null, 500);
+        }
+    }
 }
