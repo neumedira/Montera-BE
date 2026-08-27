@@ -15,38 +15,44 @@ class OrderAdminController extends Controller
     use ApiResponse;
 
     public function index(Request $request)
-    {
-        try {
-            $startDate = $request->query('start_date');
-            $endDate = $request->query('end_date');
-            $status = $request->query('status');
-            $paymentStatus = $request->query('payment_status');
-            $orderType = $request->query('order_type');
+{
+    try {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        $status = $request->query('status');
+        $paymentStatus = $request->query('payment_status');
+        $orderType = $request->query('order_type');
 
-            $orders = Order::with(['table', 'items'])
-                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-                    return $query->whereBetween('created_at', [
-                        Carbon::parse($startDate)->startOfDay(),
-                        Carbon::parse($endDate)->endOfDay()
-                    ]);
-                })
-                ->when($status, function ($query, $status) {
-                    return $query->where('status', $status);
-                })
-                ->when($paymentStatus, function ($query, $paymentStatus) {
-                    return $query->where('payment_status', $paymentStatus);
-                })
-                ->when($orderType, function ($query, $type) {
-                    return $query->where('order_type', $type);
-                })
-                ->latest()
-                ->paginate($request->get('per_page', 15));
+        $orders = Order::with(['table', 'items'])
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                return $query->whereBetween('created_at', [
+                    Carbon::parse($startDate)->startOfDay(),
+                    Carbon::parse($endDate)->endOfDay()
+                ]);
+            })
+            // LOGIKA FILTER STATUS:
+            ->when($status, function ($query, $status) {
+                // Jika frontend mengirim parameter status (misal: status=done, status=pending, dll)
+                return $query->where('status', $status);
+            }, function ($query) {
+                // JIKA TAB "SEMUA" DIPIIHIH (status kosong):
+                // Sembunyikan pesanan yang sudah 'done' dari tab Semua
+                return $query->where('status', '!=', 'done');
+            })
+            ->when($paymentStatus, function ($query, $paymentStatus) {
+                return $query->where('payment_status', $paymentStatus);
+            })
+            ->when($orderType, function ($query, $type) {
+                return $query->where('order_type', $type);
+            })
+            ->latest()
+            ->paginate($request->get('per_page', 15));
 
-            return $this->successResponse($orders, 'Berhasil mengambil daftar pesanan');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mengambil daftar pesanan: ' . $e->getMessage(), null, 500);
-        }
+        return $this->successResponse($orders, 'Berhasil mengambil daftar pesanan');
+    } catch (\Exception $e) {
+        return $this->errorResponse('Gagal mengambil daftar pesanan: ' . $e->getMessage(), null, 500);
     }
+}
 
     public function show($id)
     {
