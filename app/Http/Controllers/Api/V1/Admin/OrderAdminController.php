@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Events\NewNotificationEvent;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class OrderAdminController extends Controller
@@ -61,28 +63,46 @@ class OrderAdminController extends Controller
         }
     }
 
-   public function updateStatus(Request $request, $id)
-{
-    try {
-        // Validasi disesuaikan ke payment_status
-        $request->validate([
-            'payment_status' => 'required|in:unpaid,paid',
-        ]);
+    public function updateStatus(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'payment_status' => 'required|in:unpaid,paid',
+            ]);
 
-        $order = Order::find($id);
+            $order = Order::find($id);
 
-        if (!$order) {
-            return $this->errorResponse('Data pesanan tidak ditemukan', null, 404);
+            if (!$order) {
+                return $this->errorResponse('Data pesanan tidak ditemukan', null, 404);
+            }
+
+            $order->payment_status = $request->payment_status;
+            $order->save();
+
+            // 1. Insert ke tabel notifications (termasuk order_id)
+            $notifId = DB::table('notifications')->insertGetId([
+    'order_id'   => $order->id,
+    'message'    => "Pesanan #{$order->id} telah diperbarui status pembayarannya menjadi {$request->payment_status}.",
+    'is_read'    => false,
+    'created_at' => now(),
+    'updated_at' => now(),
+]);
+
+            // 2. Ambil data notifikasi yang baru diinsert
+            $notification = DB::table('notifications')->where('id', $notifId)->first();
+
+            // 3. Tambahkan info tambahan secara dinamis untuk dikirim via WebSocket ke Frontend
+            $notification->title = 'Status Pembayaran Diperbarui';
+            $notification->message = "Pesanan #{$order->id} telah diperbarui status pembayarannya menjadi {$request->payment_status}.";
+
+            // 4. Trigger Broadcast WebSocket ke Reverb!
+            event(new NewNotificationEvent($notification));
+
+            return $this->successResponse($order, 'Berhasil memperbarui status pembayaran pesanan menjadi ' . $request->payment_status);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Validasi gagal', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status pesanan: ' . $e->getMessage(), null, 500);
         }
-
-        $order->payment_status = $request->payment_status;
-        $order->save();
-
-        return $this->successResponse($order, 'Berhasil memperbarui status pembayaran pesanan menjadi ' . $request->payment_status);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return $this->errorResponse('Validasi gagal', $e->errors(), 422);
-    } catch (\Exception $e) {
-        return $this->errorResponse('Gagal memperbarui status pesanan: ' . $e->getMessage(), null, 500);
     }
-}
 }
