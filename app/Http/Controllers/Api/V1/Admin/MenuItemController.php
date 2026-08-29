@@ -22,7 +22,15 @@ class MenuItemController extends Controller
 
     public function store(StoreMenuItemRequest $request)
     {
-        $menuItem = MenuItem::create($request->validated());
+        $data = $request->validated();
+
+        // Handle photo upload if a file is provided
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('menu-items', 'public');
+            $data['photo_url'] = asset('storage/' . $path);
+        }
+
+        $menuItem = MenuItem::create($data);
 
         return $this->successResponse($menuItem, 'Menu item created.', 201);
     }
@@ -38,7 +46,15 @@ class MenuItemController extends Controller
 
     public function update(UpdateMenuItemRequest $request, MenuItem $menuItem)
     {
-        $menuItem->update($request->validated());
+        $data = $request->validated();
+
+        // Handle photo upload if a file is provided
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('menu-items', 'public');
+            $data['photo_url'] = asset('storage/' . $path);
+        }
+
+        $menuItem->update($data);
 
         return $this->successResponse($menuItem, 'Menu item updated.');
     }
