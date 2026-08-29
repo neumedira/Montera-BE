@@ -28,6 +28,7 @@ class UpdateMenuItemRequest extends FormRequest
             'label'       => 'nullable|string|max:50',
             'price'       => 'required|numeric|min:0',
             'description' => 'nullable|string',
+            'photo'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'photo_url'   => 'nullable|string|max:255',
             'is_active'   => 'nullable|boolean',
         ];
