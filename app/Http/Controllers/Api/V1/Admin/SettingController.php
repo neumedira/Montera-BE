@@ -81,4 +81,25 @@ class SettingController extends Controller
 
         return $this->successResponse(null, 'Pengaturan berhasil diperbarui');
     }
+
+    public function destroyPaymentMethod($id)
+    {
+        $payment = PaymentSetting::find($id);
+
+        if (!$payment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Metode pembayaran tidak ditemukan'
+            ], 404);
+        }
+
+        // Kalau ada gambar QR-nya, hapus juga file fisiknya biar storage gak penuh
+        if ($payment->qr_image_url) {
+            Storage::disk('public')->delete($payment->qr_image_url);
+        }
+
+        $payment->delete();
+
+        return $this->successResponse(null, 'Metode pembayaran berhasil dihapus');
+    }
 }
