@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Events\MenuUpdated;
 use App\Http\Controllers\Controller;
-use App\Models\MenuItem;
 use App\Http\Requests\StoreMenuItemRequest;
 use App\Http\Requests\UpdateMenuItemRequest;
+use App\Models\MenuItem;
 use App\Traits\ApiResponse;
 
 class MenuItemController extends Controller
@@ -19,7 +20,6 @@ class MenuItemController extends Controller
         return $this->successResponse($menuItems, 'Menu items retrieved.');
     }
 
-
     public function store(StoreMenuItemRequest $request)
     {
         $data = $request->validated();
@@ -32,9 +32,11 @@ class MenuItemController extends Controller
 
         $menuItem = MenuItem::create($data);
 
+        // Broadcast perubahan menu ke customer
+        event(new MenuUpdated($menuItem->load('category')));
+
         return $this->successResponse($menuItem, 'Menu item created.', 201);
     }
-
 
     public function show(MenuItem $menuItem)
     {
@@ -42,7 +44,6 @@ class MenuItemController extends Controller
 
         return $this->successResponse($menuItem, 'Menu item retrieved.');
     }
-
 
     public function update(UpdateMenuItemRequest $request, MenuItem $menuItem)
     {
@@ -56,13 +57,23 @@ class MenuItemController extends Controller
 
         $menuItem->update($data);
 
+        // Broadcast perubahan menu ke customer
+        event(new MenuUpdated($menuItem->load('category')));
+
         return $this->successResponse($menuItem, 'Menu item updated.');
     }
 
-
     public function destroy(MenuItem $menuItem)
     {
+        $deletedMenuId = $menuItem->id;
+
         $menuItem->delete();
+
+        // Broadcast penghapusan menu ke customer
+        event(new MenuUpdated([
+            'id' => $deletedMenuId,
+            'deleted' => true,
+        ]));
 
         return $this->successResponse(null, 'Menu item deleted.');
     }
