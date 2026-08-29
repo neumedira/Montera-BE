@@ -30,6 +30,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index']);
         Route::get('settings', [SettingController::class, 'index']);
         Route::post('settings', [SettingController::class, 'update']);
+        Route::delete('/settings/payment-methods/{id}', [SettingController::class, 'destroyPaymentMethod']);
 
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);
