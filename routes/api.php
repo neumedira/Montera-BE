@@ -23,12 +23,14 @@ use App\Http\Controllers\Api\V1\Customer\OrderController;
 Route::prefix('v1/admin')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 
+    Route::get('settings', [SettingController::class, 'index']);
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
 
         // Dashboard & Settings
         Route::get('dashboard', [DashboardController::class, 'index']);
-        Route::get('settings', [SettingController::class, 'index']);
+
         Route::post('settings', [SettingController::class, 'update']);
         Route::delete('/settings/payment-methods/{id}', [SettingController::class, 'destroyPaymentMethod']);
 
