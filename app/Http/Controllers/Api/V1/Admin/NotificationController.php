@@ -9,40 +9,54 @@ use Illuminate\Support\Facades\DB;
 class NotificationController extends Controller
 {
     /**
-     * Ambil daftar semua notifikasi admin yang belum dibaca (is_read = false).
+     * Ambil semua notifikasi yang belum dibaca.
      */
     public function index(Request $request)
     {
-        $notifications = DB::table('notifications')
-            ->where('is_read', false)
-            ->latest()
-            ->get();
+        $notifications =
+            DB::table('notifications')
+                ->where(
+                    'is_read',
+                    false
+                )
+                ->latest()
+                ->get();
 
         return response()->json([
-            'status' => 'success',
-            'data'   => $notifications
+            'success' => true,
+            'message' => 'Berhasil mengambil notifikasi.',
+            'data' => $notifications,
         ], 200);
     }
 
     /**
-     * Tandai satu notifikasi spesifik sebagai sudah dibaca (is_read = true).
+     * Tandai satu notifikasi sebagai sudah dibaca.
      */
-    public function markAsRead(Request $request, $id)
-    {
-        $updated = DB::table('notifications')
-            ->where('id', $id)
-            ->update(['is_read' => true, 'updated_at' => now()]);
+    public function markAsRead(
+        Request $request,
+        $id
+    ) {
+        $updated =
+            DB::table('notifications')
+                ->where(
+                    'id',
+                    $id
+                )
+                ->update([
+                    'is_read' => true,
+                    'updated_at' => now(),
+                ]);
 
         if ($updated) {
             return response()->json([
-                'status'  => 'success',
-                'message' => 'Notification marked as read'
+                'success' => true,
+                'message' => 'Notifikasi ditandai sudah dibaca.',
             ], 200);
         }
 
         return response()->json([
-            'status'  => 'error',
-            'message' => 'Notification not found'
+            'success' => false,
+            'message' => 'Notifikasi tidak ditemukan.',
         ], 404);
     }
 }

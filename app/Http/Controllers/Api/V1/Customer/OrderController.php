@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemAddon;
 use App\Models\TaxSetting;
+use App\Events\NewNotificationEvent;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -31,7 +32,8 @@ class OrderController extends Controller
             // =====================================================
 
             $order = Order::create([
-                'order_number' => $this->generateOrderNumber(),
+                'order_number' =>
+                    $this->generateOrderNumber(),
 
                 'table_id' =>
                     $validated['table_id'] ?? null,
@@ -102,14 +104,6 @@ class OrderController extends Controller
 
                 // =================================================
                 // BUNDLE ID
-                // =================================================
-                //
-                // Kalau item berasal dari bundle,
-                // bundle_id akan berisi ID bundle.
-                //
-                // Kalau menu biasa:
-                // bundle_id = null
-                //
                 // =================================================
 
                 $bundleId =
@@ -305,6 +299,68 @@ class OrderController extends Controller
             'items.menuItem',
             'items.addons.addon',
         ]);
+
+        // =========================================================
+        // CREATE NOTIFICATION
+        // =========================================================
+
+        $notificationId =
+            DB::table('notifications')
+                ->insertGetId([
+                    'order_id' =>
+                        $order->id,
+
+                    'message' =>
+                        "Pesanan #{$order->order_number} dari {$order->customer_name} telah masuk.",
+
+                    'is_read' =>
+                        false,
+
+                    'created_at' =>
+                        now(),
+
+                    'updated_at' =>
+                        now(),
+                ]);
+
+        // =========================================================
+        // GET NOTIFICATION
+        // =========================================================
+
+        $notification =
+            DB::table('notifications')
+                ->where(
+                    'id',
+                    $notificationId
+                )
+                ->first();
+
+        // =========================================================
+        // REALTIME PAYLOAD
+        // =========================================================
+        //
+        // Popup frontend hanya membutuhkan nomor order.
+        //
+        // =========================================================
+
+        $notification->title =
+            'Pesanan Baru';
+
+        $notification->order_number =
+            $order->order_number;
+
+        $notification->message =
+            'Ada pesanan baru masuk';
+
+        // =========================================================
+        // BROADCAST REALTIME
+        // =========================================================
+
+        event(
+            new NewNotificationEvent(
+                $notification
+            )
+        );
 
         // =========================================================
         // RESPONSE
