@@ -23,62 +23,189 @@ class OrderController extends Controller
         $validated = $request->validated();
 
         $order = DB::transaction(function () use ($validated) {
+
             $subtotal = 0;
+
+            // =====================================================
+            // CREATE ORDER
+            // =====================================================
 
             $order = Order::create([
                 'order_number' => $this->generateOrderNumber(),
-                'table_id' => $validated['table_id'] ?? null,
-                'order_type' => $validated['order_type'],
-                'customer_name' => $validated['customer_name'],
-                'payment_method' => $validated['payment_method'],
-                'payment_status' => 'unpaid',
-                'subtotal' => 0,
-                'tax_amount' => 0,
-                'service_charge_amount' => 0,
-                'total_amount' => 0,
+
+                'table_id' =>
+                    $validated['table_id'] ?? null,
+
+                'order_type' =>
+                    $validated['order_type'],
+
+                'customer_name' =>
+                    $validated['customer_name'],
+
+                'payment_method' =>
+                    $validated['payment_method'],
+
+                'payment_status' =>
+                    'unpaid',
+
+                'subtotal' =>
+                    0,
+
+                'tax_amount' =>
+                    0,
+
+                'service_charge_amount' =>
+                    0,
+
+                'total_amount' =>
+                    0,
             ]);
 
+            // =====================================================
+            // ORDER ITEMS
+            // =====================================================
+
             foreach ($validated['items'] as $item) {
-                $menuItem = MenuItem::where('id', $item['menu_item_id'])
-                    ->where('is_active', true)
+
+                // =================================================
+                // MENU
+                // =================================================
+
+                $menuItem =
+                    MenuItem::where(
+                        'id',
+                        $item['menu_item_id']
+                    )
+                    ->where(
+                        'is_active',
+                        true
+                    )
                     ->first();
 
                 if (!$menuItem) {
-                    abort(422, 'Menu item is not available.');
+                    abort(
+                        422,
+                        'Menu item is not available.'
+                    );
                 }
 
-                $unitPrice = $menuItem->price;
-                $itemSubtotal = $unitPrice * $item['quantity'];
+                // =================================================
+                // PRICE
+                // =================================================
 
-                $orderItem = OrderItem::create([
-                    'order_id' => $order->id,
-                    'item_type' => 'menu',
-                    'menu_item_id' => $menuItem->id,
-                    'bundle_id' => null,
-                    'item_name' => $menuItem->name,
-                    'unit_price' => $unitPrice,
-                    'quantity' => $item['quantity'],
-                    'subtotal' => $itemSubtotal,
-                    'notes' => $item['notes'] ?? null,
-                ]);
+                $unitPrice =
+                    $menuItem->price;
 
-                $addonIds = $item['addon_ids'] ?? [];
+                $itemSubtotal =
+                    $unitPrice *
+                    $item['quantity'];
+
+                // =================================================
+                // BUNDLE ID
+                // =================================================
+                //
+                // Kalau item berasal dari bundle,
+                // bundle_id akan berisi ID bundle.
+                //
+                // Kalau menu biasa:
+                // bundle_id = null
+                //
+                // =================================================
+
+                $bundleId =
+                    $item['bundle_id'] ?? null;
+
+                // =================================================
+                // CREATE ORDER ITEM
+                // =================================================
+
+                $orderItem =
+                    OrderItem::create([
+                        'order_id' =>
+                            $order->id,
+
+                        'item_type' =>
+                            $bundleId
+                                ? 'bundle'
+                                : 'menu',
+
+                        'menu_item_id' =>
+                            $menuItem->id,
+
+                        'bundle_id' =>
+                            $bundleId,
+
+                        'item_name' =>
+                            $menuItem->name,
+
+                        'unit_price' =>
+                            $unitPrice,
+
+                        'quantity' =>
+                            $item['quantity'],
+
+                        'subtotal' =>
+                            $itemSubtotal,
+
+                        'notes' =>
+                            $item['notes'] ?? null,
+                    ]);
+
+                // =================================================
+                // ADDONS
+                // =================================================
+
+                $addonIds =
+                    $item['addon_ids'] ?? [];
 
                 if (!empty($addonIds)) {
-                    $addons = Addon::whereIn('id', $addonIds)
-                        ->where('is_active', true)
+
+                    $addons =
+                        Addon::whereIn(
+                            'id',
+                            $addonIds
+                        )
+                        ->where(
+                            'is_active',
+                            true
+                        )
                         ->get();
 
-                    if ($addons->count() !== count(array_unique($addonIds))) {
-                        abort(422, 'One or more addons are not available.');
+                    if (
+                        $addons->count() !==
+                        count(
+                            array_unique(
+                                $addonIds
+                            )
+                        )
+                    ) {
+                        abort(
+                            422,
+                            'One or more addons are not available.'
+                        );
                     }
 
-                    $allowedAddonIds = $menuItem->addons()
-                        ->where('addons.is_active', true)
-                        ->pluck('addons.id');
+                    $allowedAddonIds =
+                        $menuItem
+                            ->addons()
+                            ->where(
+                                'addons.is_active',
+                                true
+                            )
+                            ->pluck(
+                                'addons.id'
+                            );
 
-                    foreach ($addons as $addon) {
-                        if (!$allowedAddonIds->contains($addon->id)) {
+                    foreach (
+                        $addons as $addon
+                    ) {
+
+                        if (
+                            !$allowedAddonIds
+                                ->contains(
+                                    $addon->id
+                                )
+                        ) {
                             abort(
                                 422,
                                 "Addon {$addon->name} is not available for {$menuItem->name}."
@@ -86,47 +213,102 @@ class OrderController extends Controller
                         }
 
                         OrderItemAddon::create([
-                            'order_item_id' => $orderItem->id,
-                            'addon_id' => $addon->id,
-                            'addon_name' => $addon->name,
-                            'addon_price' => $addon->price,
+                            'order_item_id' =>
+                                $orderItem->id,
+
+                            'addon_id' =>
+                                $addon->id,
+
+                            'addon_name' =>
+                                $addon->name,
+
+                            'addon_price' =>
+                                $addon->price,
                         ]);
 
-                        $itemSubtotal += $addon->price * $item['quantity'];
+                        $itemSubtotal +=
+                            $addon->price *
+                            $item['quantity'];
                     }
                 }
 
+                // =================================================
+                // UPDATE ITEM SUBTOTAL
+                // =================================================
+
                 $orderItem->update([
-                    'subtotal' => $itemSubtotal,
+                    'subtotal' =>
+                        $itemSubtotal,
                 ]);
 
-                $subtotal += $itemSubtotal;
+                // =================================================
+                // ADD TO ORDER SUBTOTAL
+                // =================================================
+
+                $subtotal +=
+                    $itemSubtotal;
             }
 
-            $taxSetting = TaxSetting::latest()->first();
+            // =====================================================
+            // TAX / SERVICE CHARGE
+            // =====================================================
 
-            $taxPercentage = $taxSetting?->tax_percentage ?? 0;
-            $serviceChargePercentage = $taxSetting?->service_charge_percentage ?? 0;
+            $taxSetting =
+                TaxSetting::latest()->first();
 
-            $taxAmount = $subtotal * ($taxPercentage / 100);
-            $serviceChargeAmount = $subtotal * ($serviceChargePercentage / 100);
-            $totalAmount = $subtotal + $taxAmount + $serviceChargeAmount;
+            $taxPercentage =
+                $taxSetting?->tax_percentage ?? 0;
+
+            $serviceChargePercentage =
+                $taxSetting?->service_charge_percentage ?? 0;
+
+            $taxAmount =
+                $subtotal *
+                ($taxPercentage / 100);
+
+            $serviceChargeAmount =
+                $subtotal *
+                ($serviceChargePercentage / 100);
+
+            $totalAmount =
+                $subtotal +
+                $taxAmount +
+                $serviceChargeAmount;
+
+            // =====================================================
+            // UPDATE ORDER TOTAL
+            // =====================================================
 
             $order->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $taxAmount,
-                'service_charge_amount' => $serviceChargeAmount,
-                'total_amount' => $totalAmount,
+                'subtotal' =>
+                    $subtotal,
+
+                'tax_amount' =>
+                    $taxAmount,
+
+                'service_charge_amount' =>
+                    $serviceChargeAmount,
+
+                'total_amount' =>
+                    $totalAmount,
             ]);
 
             return $order;
         });
+
+        // =========================================================
+        // LOAD RELATIONS
+        // =========================================================
 
         $order->load([
             'table',
             'items.menuItem',
             'items.addons.addon',
         ]);
+
+        // =========================================================
+        // RESPONSE
+        // =========================================================
 
         return $this->successResponse(
             $order,
@@ -135,12 +317,28 @@ class OrderController extends Controller
         );
     }
 
+    // =========================================================
+    // ORDER NUMBER
+    // =========================================================
+
     private function generateOrderNumber(): string
     {
         do {
-            $orderNumber = 'ORD-' . strtoupper(Str::random(12));
-        } while (Order::where('order_number', $orderNumber)->exists());
+
+            $orderNumber =
+                'ORD-' .
+                strtoupper(
+                    Str::random(12)
+                );
+
+        } while (
+            Order::where(
+                'order_number',
+                $orderNumber
+            )->exists()
+        );
 
         return $orderNumber;
     }
 }
+

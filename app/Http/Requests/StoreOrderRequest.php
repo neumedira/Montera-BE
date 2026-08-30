@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreOrderRequest extends FormRequest
 {
@@ -16,6 +17,20 @@ class StoreOrderRequest extends FormRequest
     }
 
     /**
+     * Normalize payment method sebelum validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $paymentMethod = $this->input('payment_method');
+
+        if ($paymentMethod === 'cash') {
+            $this->merge([
+                'payment_method' => 'tunai',
+            ]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
@@ -23,16 +38,28 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // =====================================================
+            // TABLE
+            // =====================================================
+
             'table_id' => [
                 'nullable',
                 'integer',
                 'exists:tables,id',
             ],
 
+            // =====================================================
+            // ORDER TYPE
+            // =====================================================
+
             'order_type' => [
                 'required',
                 'in:dine-in,takeaway',
             ],
+
+            // =====================================================
+            // CUSTOMER
+            // =====================================================
 
             'customer_name' => [
                 'required',
@@ -40,10 +67,27 @@ class StoreOrderRequest extends FormRequest
                 'max:100',
             ],
 
+            // =====================================================
+            // PAYMENT METHOD
+            // =====================================================
+
             'payment_method' => [
                 'required',
-                'in:cash,qris',
+                'string',
+                Rule::exists(
+                    'payment_settings',
+                    'method'
+                )->where(function ($query) {
+                    $query->where(
+                        'is_active',
+                        true
+                    );
+                }),
             ],
+
+            // =====================================================
+            // ITEMS
+            // =====================================================
 
             'items' => [
                 'required',
@@ -51,11 +95,34 @@ class StoreOrderRequest extends FormRequest
                 'min:1',
             ],
 
+            // =====================================================
+            // MENU ITEM
+            // =====================================================
+
             'items.*.menu_item_id' => [
                 'required',
                 'integer',
                 'exists:menu_items,id',
             ],
+
+            // =====================================================
+            // BUNDLE
+            // =====================================================
+            //
+            // null = menu biasa
+            // id   = menu merupakan bagian dari bundle
+            //
+            // =====================================================
+
+            'items.*.bundle_id' => [
+                'nullable',
+                'integer',
+                'exists:bundles,id',
+            ],
+
+            // =====================================================
+            // QUANTITY
+            // =====================================================
 
             'items.*.quantity' => [
                 'required',
@@ -63,11 +130,19 @@ class StoreOrderRequest extends FormRequest
                 'min:1',
             ],
 
+            // =====================================================
+            // NOTES
+            // =====================================================
+
             'items.*.notes' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
+
+            // =====================================================
+            // ADDONS
+            // =====================================================
 
             'items.*.addon_ids' => [
                 'nullable',
@@ -81,3 +156,4 @@ class StoreOrderRequest extends FormRequest
         ];
     }
 }
+
