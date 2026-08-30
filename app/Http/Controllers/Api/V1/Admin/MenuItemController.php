@@ -36,6 +36,8 @@ class MenuItemController extends Controller
             $menuItem->addons()->sync($data['addon_ids']);
         }
 
+        event(new MenuUpdated($menuItem->load(['category', 'addons'])));
+
         return $this->successResponse($menuItem, 'Menu item created.', 201);
     }
 
@@ -65,6 +67,8 @@ class MenuItemController extends Controller
             $menuItem->addons()->sync($data['addon_ids']);
         }
 
+        event(new MenuUpdated($menuItem->load(['category', 'addons'])));
+
         return $this->successResponse($menuItem, 'Menu item updated.');
     }
 
@@ -72,6 +76,11 @@ class MenuItemController extends Controller
     public function destroy(MenuItem $menuItem)
     {
         $menuItem->delete();
+
+        event(new MenuUpdated([
+            'id' => $deletedMenuId,
+            'deleted' => true,
+        ]));
 
         return $this->successResponse(null, 'Menu item deleted.');
     }
