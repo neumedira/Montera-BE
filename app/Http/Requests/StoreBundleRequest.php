@@ -24,7 +24,7 @@ class StoreBundleRequest extends FormRequest
     {
         return [
             'name'                 => 'required|string|max:150',
-            'photo_url'            => 'nullable|string|max:255',
+            'photo'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'normal_price'         => 'required|numeric|min:0',
             'bundle_price'         => 'required|numeric|min:0',
             'is_active'            => 'nullable|boolean',

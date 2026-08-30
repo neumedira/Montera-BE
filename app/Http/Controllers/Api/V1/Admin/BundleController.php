@@ -22,7 +22,21 @@ class BundleController extends Controller
 
     public function store(StoreBundleRequest $request)
     {
-        $bundle = Bundle::create($request->validated());
+        $data = $request->validated();
+
+    if ($request->hasFile('photo')) {
+        $path = $request->file('photo')->store('bundles', 'public');
+        $data['photo'] = asset('storage/' . $path);
+    }
+
+    $bundle = Bundle::create($data);
+
+
+    if (isset($data['items'])) {
+        foreach ($data['items'] as $item) {
+            $bundle->items()->create($item);
+        }
+    }
 
         return $this->successResponse($bundle, 'Bundle created.', 201);
     }
@@ -38,7 +52,22 @@ class BundleController extends Controller
 
     public function update(UpdateBundleRequest $request, Bundle $bundle)
     {
-        $bundle->update($request->validated());
+        $data = $request->validated();
+
+    if ($request->hasFile('photo')) {
+        $path = $request->file('photo')->store('bundles', 'public');
+        $data['photo'] = asset('storage/' . $path);
+    }
+
+    $bundle->update($data);
+
+
+    if (isset($data['items'])) {
+        $bundle->items()->delete();
+        foreach ($data['items'] as $item) {
+            $bundle->items()->create($item);
+        }
+    }
 
         return $this->successResponse($bundle, 'Bundle updated.');
     }

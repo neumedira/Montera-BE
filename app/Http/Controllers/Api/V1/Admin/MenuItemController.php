@@ -24,10 +24,9 @@ class MenuItemController extends Controller
     {
         $data = $request->validated();
 
-        // Handle photo upload if a file is provided
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('menu-items', 'public');
-            $data['photo_url'] = asset('storage/' . $path);
+            $data['photo'] = asset('storage/' . $path);
         }
 
         $menuItem = MenuItem::create($data);
@@ -52,7 +51,7 @@ class MenuItemController extends Controller
         // Handle photo upload if a file is provided
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('menu-items', 'public');
-            $data['photo_url'] = asset('storage/' . $path);
+            $data['photo'] = asset('storage/' . $path);
         }
 
         $menuItem->update($data);
