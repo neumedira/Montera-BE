@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('whatsapp_number', 20)->nullable();
             $table->string('instagram', 50)->nullable();
             $table->string('tiktok', 50)->nullable();
+            $table->string('banner_image_url')->nullable(); // Kolom untuk menyimpan poster/banner
             $table->timestamps();
         });
     }

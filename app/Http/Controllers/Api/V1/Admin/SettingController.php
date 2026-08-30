@@ -29,7 +29,7 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
-        // 1. Update Profil Usaha (Termasuk Sosmed)
+        // 1. Update Profil Usaha (Termasuk Sosmed & Poster)
         if ($request->has('business_profile')) {
             $profile = BusinessProfile::first() ?? new BusinessProfile();
             $profile->cafe_name = $request->input('business_profile.cafe_name', $profile->cafe_name);
@@ -37,6 +37,20 @@ class SettingController extends Controller
             $profile->whatsapp_number = $request->input('business_profile.whatsapp_number', $profile->whatsapp_number);
             $profile->instagram = $request->input('business_profile.instagram', $profile->instagram);
             $profile->tiktok = $request->input('business_profile.tiktok', $profile->tiktok);
+
+            // TAMBAHAN LOGIKA UPLOAD POSTER
+
+            // Cek apakah ada file yang dikirim dengan key 'banner_image'
+            if ($request->hasFile('business_profile.banner_image')) {
+                // Jika ada poster lama, hapus dulu agar storage tidak bengkak
+                if ($profile->banner_image_url) {
+                    Storage::disk('public')->delete($profile->banner_image_url);
+                }
+                // Simpan gambar poster baru ke folder storage/app/public/banners
+                $path = $request->file('business_profile.banner_image')->store('banners', 'public');
+                $profile->banner_image_url = $path;
+            }
+
             $profile->save();
         }
 
@@ -80,5 +94,26 @@ class SettingController extends Controller
         }
 
         return $this->successResponse(null, 'Pengaturan berhasil diperbarui');
+    }
+
+    public function destroyPaymentMethod($id)
+    {
+        $payment = PaymentSetting::find($id);
+
+        if (!$payment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Metode pembayaran tidak ditemukan'
+            ], 404);
+        }
+
+        // Kalau ada gambar QR-nya, hapus juga file fisiknya biar storage gak penuh
+        if ($payment->qr_image_url) {
+            Storage::disk('public')->delete($payment->qr_image_url);
+        }
+
+        $payment->delete();
+
+        return $this->successResponse(null, 'Metode pembayaran berhasil dihapus');
     }
 }
