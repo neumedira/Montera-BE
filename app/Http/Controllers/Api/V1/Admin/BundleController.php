@@ -26,7 +26,7 @@ class BundleController extends Controller
 
     if ($request->hasFile('photo')) {
         $path = $request->file('photo')->store('bundles', 'public');
-        $data['photo'] = asset('storage/' . $path);
+        $data['photo_url'] = asset('storage/' . $path);
     }
 
     $bundle = Bundle::create($data);
@@ -56,7 +56,7 @@ class BundleController extends Controller
 
     if ($request->hasFile('photo')) {
         $path = $request->file('photo')->store('bundles', 'public');
-        $data['photo'] = asset('storage/' . $path);
+        $data['photo_url'] = asset('storage/' . $path);
     }
 
     $bundle->update($data);

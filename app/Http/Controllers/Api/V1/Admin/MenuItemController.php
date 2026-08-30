@@ -21,12 +21,11 @@ class MenuItemController extends Controller
     }
 
     public function store(StoreMenuItemRequest $request)
-    {
-        $data = $request->validated();
+    {$data = $request->validated();
 
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('menu-items', 'public');
-            $data['photo'] = asset('storage/' . $path);
+            $data['photo_url'] = asset('storage/' . $path);
         }
 
         $menuItem = MenuItem::create($data);
@@ -36,16 +35,16 @@ class MenuItemController extends Controller
             $menuItem->addons()->sync($data['addon_ids']);
         }
 
+        // Broadcast perubahan menu ke customer (Cukup 1 event dengan data lengkap)
         event(new MenuUpdated($menuItem->load(['category', 'addons'])));
-        // Broadcast perubahan menu ke customer
-        event(new MenuUpdated($menuItem->load('category')));
 
-        return $this->successResponse($menuItem, 'Menu item created.', 201);
+        return $this->successResponse($menuItem->load(['category', 'addons']), 'Menu item created.', 201);
     }
 
     public function show(MenuItem $menuItem)
     {
-        $menuItem->load('category');
+        // Muat relasi category & addons
+        $menuItem->load(['category', 'addons']);
 
         return $this->successResponse($menuItem, 'Menu item retrieved.');
     }
@@ -57,7 +56,7 @@ class MenuItemController extends Controller
         // Handle photo upload if a file is provided
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('menu-items', 'public');
-            $data['photo'] = asset('storage/' . $path);
+            $data['photo_url'] = asset('storage/' . $path);
         }
 
         $menuItem->update($data);
@@ -67,11 +66,10 @@ class MenuItemController extends Controller
             $menuItem->addons()->sync($data['addon_ids']);
         }
 
+        // Broadcast perubahan menu ke customer (Cukup 1 event dengan data lengkap)
         event(new MenuUpdated($menuItem->load(['category', 'addons'])));
-        // Broadcast perubahan menu ke customer
-        event(new MenuUpdated($menuItem->load('category')));
 
-        return $this->successResponse($menuItem, 'Menu item updated.');
+        return $this->successResponse($menuItem->load(['category', 'addons']), 'Menu item updated.');
     }
 
     public function destroy(MenuItem $menuItem)
