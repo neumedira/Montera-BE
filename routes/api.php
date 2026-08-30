@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
+// =========================================================
+// ADMIN CONTROLLERS
+// =========================================================
+
 use App\Http\Controllers\Api\V1\Admin\AuthController;
 use App\Http\Controllers\Api\V1\Admin\SettingController;
 use App\Http\Controllers\Api\V1\Admin\TableController;
@@ -12,58 +16,224 @@ use App\Http\Controllers\Api\V1\Admin\BundleController;
 use App\Http\Controllers\Api\V1\Admin\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\OrderAdminController;
 use App\Http\Controllers\Api\V1\Admin\NotificationController;
-// use App\Http\Controllers\Api\WebhookController; // DIBATALKAN/HOLD
+
+// =========================================================
+// CUSTOMER CONTROLLERS
+// =========================================================
 
 use App\Http\Controllers\Api\V1\Customer\MenuCatalogController;
+use App\Http\Controllers\Api\V1\Customer\SettingController as CustomerSettingController;
 use App\Http\Controllers\Api\V1\Customer\OrderController;
 
-// ==========================================
-// API ADMIN (PREFIX: /api/v1/admin)
-// ==========================================
-Route::prefix('v1/admin')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
 
-    Route::get('settings', [SettingController::class, 'index']);
+// =========================================================
+// API ADMIN
+// PREFIX: /api/v1/admin
+// =========================================================
+
+Route::prefix('v1/admin')->group(function () {
+
+    // =====================================================
+    // AUTH
+    // =====================================================
+
+    Route::post(
+        'login',
+        [AuthController::class, 'login']
+    );
+
+    // =====================================================
+    // PUBLIC SETTINGS
+    // =====================================================
+
+    Route::get(
+        'settings',
+        [SettingController::class, 'index']
+    );
+
+    // =====================================================
+    // PROTECTED ADMIN ROUTES
+    // =====================================================
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
 
-        // Dashboard & Settings
-        Route::get('dashboard', [DashboardController::class, 'index']);
+        // =================================================
+        // AUTH
+        // =================================================
 
-        Route::post('settings', [SettingController::class, 'update']);
-        Route::delete('/settings/payment-methods/{id}', [SettingController::class, 'destroyPaymentMethod']);
+        Route::post(
+            'logout',
+            [AuthController::class, 'logout']
+        );
 
-        // Notifications
-        Route::get('notifications', [NotificationController::class, 'index']);
-        Route::post('notifications/mark-read', [NotificationController::class, 'markAsRead']);
-        Route::patch('notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        // =================================================
+        // DASHBOARD
+        // =================================================
 
-        // Master Data CRUD
-        Route::apiResource('tables', TableController::class);
-        Route::apiResource('menu-categories', MenuCategoryController::class);
-        Route::apiResource('menu-items', MenuItemController::class);
-        Route::apiResource('addons', AddonController::class);
-        Route::apiResource('bundles', BundleController::class);
+        Route::get(
+            'dashboard',
+            [DashboardController::class, 'index']
+        );
 
-        // Order Monitoring & Update Status (Fitur Rafi - Dev 4)
-        Route::patch('orders/{id}/status', [OrderAdminController::class, 'updateStatus']);
-        Route::apiResource('orders', OrderAdminController::class)->except(['store', 'destroy']);
+        // =================================================
+        // SETTINGS
+        // =================================================
 
-        // Verifikasi Pembayaran Manual QRIS (Fitur Revisi Admin)
-        Route::patch('orders/{order}/verify-payment', [OrderAdminController::class, 'verifyPayment']);
+        Route::post(
+            'settings',
+            [SettingController::class, 'update']
+        );
+
+        Route::delete(
+            'settings/payment-methods/{id}',
+            [SettingController::class, 'destroyPaymentMethod']
+        );
+
+        // =================================================
+        // NOTIFICATIONS
+        // =================================================
+
+        // Ambil semua notification yang belum dibaca
+        Route::get(
+            'notifications',
+            [NotificationController::class, 'index']
+        );
+
+        // Tandai satu notification sebagai sudah dibaca
+        Route::patch(
+            'notifications/{id}/read',
+            [NotificationController::class, 'markAsRead']
+        );
+
+        // =================================================
+        // MASTER DATA
+        // =================================================
+
+        Route::apiResource(
+            'tables',
+            TableController::class
+        );
+
+        Route::apiResource(
+            'menu-categories',
+            MenuCategoryController::class
+        );
+
+        Route::apiResource(
+            'menu-items',
+            MenuItemController::class
+        );
+
+        Route::apiResource(
+            'addons',
+            AddonController::class
+        );
+
+        Route::apiResource(
+            'bundles',
+            BundleController::class
+        );
+
+        // =================================================
+        // ORDER MONITORING
+        // =================================================
+
+        // Update status order
+        Route::patch(
+            'orders/{id}/status',
+            [OrderAdminController::class, 'updateStatus']
+        );
+
+        // Order list + detail
+        Route::apiResource(
+            'orders',
+            OrderAdminController::class
+        )->except([
+            'store',
+            'destroy',
+        ]);
+
+        // =================================================
+        // VERIFY QRIS PAYMENT
+        // =================================================
+
+        Route::patch(
+            'orders/{order}/verify-payment',
+            [OrderAdminController::class, 'verifyPayment']
+        );
     });
 });
 
-// ==========================================
-// API CUSTOMER (PREFIX: /api/v1/customer)
-// ==========================================
+
+// =========================================================
+// API CUSTOMER
+// PREFIX: /api/v1/customer
+// =========================================================
+
 Route::prefix('v1/customer')->group(function () {
-    Route::get('menus', [MenuCatalogController::class, 'index']);
-    Route::post('orders', [OrderController::class, 'store']);
+
+    // =====================================================
+    // SETTINGS
+    // =====================================================
+
+    Route::get(
+        'settings',
+        [CustomerSettingController::class, 'index']
+    );
+
+    // =====================================================
+    // SCAN TABLE QR
+    // GET /api/v1/customer/scan/{token}
+    // =====================================================
+
+    Route::get(
+        'scan/{token}',
+        [MenuCatalogController::class, 'scanTable']
+    );
+
+    // =====================================================
+    // MENU
+    // =====================================================
+
+    Route::get(
+        'menus',
+        [MenuCatalogController::class, 'index']
+    );
+
+    // =====================================================
+    // BUNDLE LIST
+    // =====================================================
+
+    Route::get(
+        'bundles',
+        [MenuCatalogController::class, 'bundles']
+    );
+
+    // =====================================================
+    // BUNDLE DETAIL
+    // =====================================================
+
+    Route::get(
+        'bundles/{bundle}',
+        [MenuCatalogController::class, 'bundleDetail']
+    );
+
+    // =====================================================
+    // CUSTOMER ORDER
+    // =====================================================
+
+    Route::post(
+        'orders',
+        [OrderController::class, 'store']
+    );
 });
 
-// ==========================================
-// WEBHOOK PAYMENT (DIBATALKAN / HOLD)
-// ==========================================
-// Route::post('v1/webhook/qris', [WebhookController::class, 'handleQrisWebhook']);
+
+// =========================================================
+// WEBHOOK PAYMENT
+// =========================================================
+//
+// Route::post(
+//     'v1/webhook/qris',
+//     [WebhookController::class, 'handleQrisWebhook']
+// );

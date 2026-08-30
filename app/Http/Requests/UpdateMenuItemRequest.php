@@ -7,19 +7,26 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMenuItemRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    protected function prepareForValidation(): void
+    {
+        // Kalau frontend mengirim addon_ids sebagai JSON string,
+        // ubah menjadi array sebelum validation.
+        if ($this->has('addon_ids') && is_string($this->addon_ids)) {
+            $decoded = json_decode($this->addon_ids, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $this->merge([
+                    'addon_ids' => $decoded,
+                ]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -30,8 +37,9 @@ class UpdateMenuItemRequest extends FormRequest
             'description' => 'nullable|string',
             'photo'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active'   => 'nullable|boolean',
-            'addon_ids'   => 'nullable|array',                     // Tambahan validasi addon
-        'addon_ids.*' => 'required|integer|exists:addons,id', // Memastikan ID addon valid
+
+            'addon_ids'   => 'nullable|array',
+            'addon_ids.*' => 'integer|exists:addons,id',
         ];
     }
 }
