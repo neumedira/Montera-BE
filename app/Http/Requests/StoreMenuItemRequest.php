@@ -30,6 +30,8 @@ class StoreMenuItemRequest extends FormRequest
             'description' => 'nullable|string',
             'photo'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'is_active'   => 'nullable|boolean',
+            'addon_ids'   => 'nullable|array',                     // Tambahan validasi addon
+        'addon_ids.*' => 'required|integer|exists:addons,id', // Memastikan ID addon valid
         ];
     }
 }

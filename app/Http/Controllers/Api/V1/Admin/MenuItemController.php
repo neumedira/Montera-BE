@@ -31,6 +31,11 @@ class MenuItemController extends Controller
 
         $menuItem = MenuItem::create($data);
 
+        // Sync relasi addon_ids dari Frontend
+        if (isset($data['addon_ids'])) {
+            $menuItem->addons()->sync($data['addon_ids']);
+        }
+
         return $this->successResponse($menuItem, 'Menu item created.', 201);
     }
 
@@ -54,6 +59,11 @@ class MenuItemController extends Controller
         }
 
         $menuItem->update($data);
+
+        // Sync relasi addon_ids saat update
+        if (isset($data['addon_ids'])) {
+            $menuItem->addons()->sync($data['addon_ids']);
+        }
 
         return $this->successResponse($menuItem, 'Menu item updated.');
     }
