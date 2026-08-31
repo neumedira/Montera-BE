@@ -44,6 +44,13 @@ class OrderController extends Controller
                 'customer_name' =>
                     $validated['customer_name'],
 
+                // =================================================
+                // GLOBAL ORDER NOTES
+                // =================================================
+
+                'notes' =>
+                    $validated['notes'] ?? null,
+
                 'payment_method' =>
                     $validated['payment_method'],
 
@@ -70,7 +77,7 @@ class OrderController extends Controller
             foreach ($validated['items'] as $item) {
 
                 // =================================================
-                // MENU
+                // FIND MENU
                 // =================================================
 
                 $menuItem =
@@ -141,6 +148,7 @@ class OrderController extends Controller
                         'subtotal' =>
                             $itemSubtotal,
 
+                        // Catatan per item/menu
                         'notes' =>
                             $item['notes'] ?? null,
                     ]);
@@ -337,10 +345,6 @@ class OrderController extends Controller
 
         // =========================================================
         // REALTIME PAYLOAD
-        // =========================================================
-        //
-        // Popup frontend hanya membutuhkan nomor order.
-        //
         // =========================================================
 
         $notification->title =
