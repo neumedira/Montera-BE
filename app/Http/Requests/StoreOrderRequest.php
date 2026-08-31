@@ -86,6 +86,16 @@ class StoreOrderRequest extends FormRequest
             ],
 
             // =====================================================
+            // GLOBAL ORDER NOTES
+            // =====================================================
+
+            'notes' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+
+            // =====================================================
             // ITEMS
             // =====================================================
 
@@ -131,7 +141,7 @@ class StoreOrderRequest extends FormRequest
             ],
 
             // =====================================================
-            // NOTES
+            // ITEM NOTES
             // =====================================================
 
             'items.*.notes' => [
@@ -156,4 +166,3 @@ class StoreOrderRequest extends FormRequest
         ];
     }
 }
-
