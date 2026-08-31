@@ -109,6 +109,8 @@ Route::prefix('v1/admin')->group(function () {
         // MASTER DATA
         // =================================================
 
+        Route::get('tables/{table}/print', [TableController::class, 'printQr']);
+
         Route::apiResource(
             'tables',
             TableController::class
@@ -149,9 +151,9 @@ Route::prefix('v1/admin')->group(function () {
             'orders',
             OrderAdminController::class
         )->except([
-            'store',
-            'destroy',
-        ]);
+                    'store',
+                    'destroy',
+                ]);
 
         // =================================================
         // VERIFY QRIS PAYMENT

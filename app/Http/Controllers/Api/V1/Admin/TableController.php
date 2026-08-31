@@ -8,6 +8,7 @@ use App\Http\Requests\StoreTableRequest;
 use App\Http\Requests\UpdateTableRequest;
 use Illuminate\Support\Str;
 use App\Traits\ApiResponse;
+use App\Models\BusinessProfile;
 
 class TableController extends Controller
 {
@@ -78,5 +79,28 @@ class TableController extends Controller
         $table->delete();
 
         return $this->successResponse(null, 'Meja berhasil dihapus');
+    }
+
+    public function printQr($id)
+    {
+        $table = Table::find($id);
+
+        if (!$table) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meja tidak ditemukan'
+            ], 404);
+        }
+
+        // Ambil nama kafe untuk ditaruh di atas stiker QR
+        $profile = BusinessProfile::first();
+
+        $data = [
+            'cafe_name' => $profile ? $profile->cafe_name : 'Montera Cafe',
+            'table_number' => $table->table_number,
+            'qr_code_url' => $table->qr_code_url,
+        ];
+
+        return $this->successResponse($data, 'Data print QR meja berhasil ditarik');
     }
 }
