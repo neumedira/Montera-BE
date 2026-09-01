@@ -45,9 +45,7 @@ class MenuItemController extends Controller
                 ->file('photo')
                 ->store('menu-items', 'public');
 
-            $data['photo_url'] = asset(
-                'storage/' . $path
-            );
+            $data['photo_url'] = $path;
         }
 
         // ================================================
@@ -124,9 +122,7 @@ class MenuItemController extends Controller
                 ->file('photo')
                 ->store('menu-items', 'public');
 
-            $data['photo_url'] = asset(
-                'storage/' . $path
-            );
+            $data['photo_url'] = $path;
         }
 
         // ================================================

@@ -44,9 +44,7 @@ class BundleController extends Controller
                 ->file('photo')
                 ->store('bundles', 'public');
 
-            $data['photo_url'] = asset(
-                'storage/' . $path
-            );
+            $data['photo_url'] = $path;
         }
 
         // =====================================================
@@ -119,9 +117,7 @@ class BundleController extends Controller
                 ->file('photo')
                 ->store('bundles', 'public');
 
-            $data['photo_url'] = asset(
-                'storage/' . $path
-            );
+            $data['photo_url'] = $path;
         }
 
         // =====================================================
